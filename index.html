@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>法律合同句子结构分析练习系统</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .lucide {
+            width: 1em;
+            height: 1em;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            font-size: 18px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="loading">
+            <div>系统加载中，请稍候...</div>
+        </div>
+    </div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 简化的图标组件
+        const Icon = ({ name, size = 16, className = "", fill = false }) => {
+            const icons = {
+                check: "M20,6 9,17 4,12",
+                x: "M18,6 6,18 M6,6 18,18",
+                rotateCcw: "M1,4 1,10 7,10 M3.51,15a9,9,0,0,0,2.13,3.09,9,9,0,0,0,13.37,0,9,9,0,0,0,0-12.76,9,9,0,0,0-9.57-1.9",
+                award: "M12,8 a7,7,0,1,1,0,0.01 M8.21,13.89 7,23 12,20 17,23 15.79,13.88",
+                star: "M12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26",
+                lock: "M3,11 21,11 21,22 3,22 M12,7 a4,4,0,0,1,0,0.01 M12,3 a4,4,0,0,1,0,8"
+            };
+            
+            return (
+                <svg 
+                    className={`lucide ${className}`} 
+                    width={size} 
+                    height={size} 
+                    viewBox="0 0 24 24" 
+                    fill={fill ? "currentColor" : "none"} 
+                    stroke="currentColor" 
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <path d={icons[name]} />
+                </svg>
+            );
+        };
+
+        const LegalSentenceAnalyzer = () => {
+            // 生成练习数据
+            const generateLevels = () => {
+                const levels = [];
+                
+                // 简单句子模板
+                const simpleTemplates = [
+                    {
+                        text: "The party agrees to the terms.",
+                        words: ["The", "party", "agrees", "to", "the", "terms"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [], complement: [3, 4, 5] },
+                        explanation: "主语：The party；谓语：agrees；状语：to the terms"
+                    },
+                    {
+                        text: "Both parties sign the contract.",
+                        words: ["Both", "parties", "sign", "the", "contract"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [3, 4], complement: [] },
+                        explanation: "主语：Both parties；谓语：sign；宾语：the contract"
+                    },
+                    {
+                        text: "The contractor performs the work.",
+                        words: ["The", "contractor", "performs", "the", "work"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [3, 4], complement: [] },
+                        explanation: "主语：The contractor；谓语：performs；宾语：the work"
+                    },
+                    {
+                        text: "The agreement becomes effective immediately.",
+                        words: ["The", "agreement", "becomes", "effective", "immediately"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [3], complement: [4] },
+                        explanation: "主语：The agreement；谓语：becomes；宾语：effective；状语：immediately"
+                    },
+                    {
+                        text: "The client pays all fees.",
+                        words: ["The", "client", "pays", "all", "fees"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [3, 4], complement: [] },
+                        explanation: "主语：The client；谓语：pays；宾语：all fees"
+                    },
+                    {
+                        text: "This contract terminates automatically.",
+                        words: ["This", "contract", "terminates", "automatically"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [], complement: [3] },
+                        explanation: "主语：This contract；谓语：terminates；状语：automatically"
+                    }
+                ];
+
+                // 中等难度句子模板
+                const mediumTemplates = [
+                    {
+                        text: "The Party shall perform all obligations under this Agreement.",
+                        words: ["The", "Party", "shall", "perform", "all", "obligations", "under", "this", "Agreement"],
+                        correctStructure: { subject: [0, 1], predicate: [2, 3], object: [4, 5], complement: [6, 7, 8] },
+                        explanation: "主语：The Party；谓语：shall perform；宾语：all obligations；状语：under this Agreement"
+                    },
+                    {
+                        text: "Both parties agree to maintain confidentiality of disclosed information.",
+                        words: ["Both", "parties", "agree", "to", "maintain", "confidentiality", "of", "disclosed", "information"],
+                        correctStructure: { subject: [0, 1], predicate: [2], object: [3, 4, 5, 6, 7, 8], complement: [] },
+                        explanation: "主语：Both parties；谓语：agree；宾语：to maintain confidentiality of disclosed information"
+                    },
+                    {
+                        text: "The Contractor must deliver the goods by December 31st.",
+                        words: ["The", "Contractor", "must", "deliver", "the", "goods", "by", "December", "31st"],
+                        correctStructure: { subject: [0, 1], predicate: [2, 3], object: [4, 5], complement: [6, 7, 8] },
+                        explanation: "主语：The Contractor；谓语：must deliver；宾语：the goods；状语：by December 31st"
+                    },
+                    {
+                        text: "Either party may terminate this agreement with written notice.",
+                        words: ["Either", "party", "may", "terminate", "this", "agreement", "with", "written", "notice"],
+                        correctStructure: { subject: [0, 1], predicate: [2, 3], object: [4, 5], complement: [6, 7, 8] },
+                        explanation: "主语：Either party；谓语：may terminate；宾语：this agreement；状语：with written notice"
+                    },
+                    {
+                        text: "The licensee shall not disclose confidential information to third parties.",
+                        words: ["The", "licensee", "shall", "not", "disclose", "confidential", "information", "to", "third", "parties"],
+                        correctStructure: { subject: [0, 1], predicate: [2, 3, 4], object: [5, 6], complement: [7, 8, 9] },
+                        explanation: "主语：The licensee；谓语：shall not disclose；宾语：confidential information；状语：to third parties"
+                    }
+                ];
+
+                // 复杂句子模板
+                const complexTemplates = [
+                    {
+                        text: "Upon termination of this Agreement, each party shall return all materials.",
+                        words: ["Upon", "termination", "of", "this", "Agreement", "each", "party", "shall", "return", "all", "materials"],
+                        correctStructure: { subject: [5, 6], predicate: [7, 8], object: [9, 10], complement: [0, 1, 2, 3, 4] },
+                        explanation: "状语：Upon termination of this Agreement；主语：each party；谓语：shall return；宾语：all materials"
+                    },
+                    {
+                        text: "Notwithstanding any provision herein, the Company reserves the right to modify terms.",
+                        words: ["Notwithstanding", "any", "provision", "herein", "the", "Company", "reserves", "the", "right", "to", "modify", "terms"],
+                        correctStructure: { subject: [4, 5], predicate: [6], object: [7, 8, 9, 10, 11], complement: [0, 1, 2, 3] },
+                        explanation: "状语：Notwithstanding any provision herein；主语：the Company；谓语：reserves；宾语：the right to modify terms"
+                    }
+                ];
+
+                // 生成30个级别
+                for (let level = 1; level <= 30; level++) {
+                    const sentences = [];
+                    
+                    for (let i = 0; i < 30; i++) {
+                        let template;
+                        if (level <= 10) {
+                            template = simpleTemplates[i % simpleTemplates.length];
+                        } else if (level <= 20) {
+                            template = mediumTemplates[i % mediumTemplates.length];
+                        } else {
+                            template = complexTemplates[i % complexTemplates.length];
+                        }
+                        
+                        sentences.push({
+                            id: `${level}-${i}`,
+                            ...template
+                        });
+                    }
+                    
+                    levels.push({
+                        level: level,
+                        title: level <= 10 ? `初级 ${level}` : level <= 20 ? `中级 ${level-10}` : `高级 ${level-20}`,
+                        description: level <= 10 ? "基础句型" : level <= 20 ? "复合句型" : "复杂长句",
+                        sentences: sentences,
+                        unlocked: level === 1,
+                        completed: false,
+                        stars: 0
+                    });
+                }
+                
+                return levels;
+            };
+
+            // 状态管理
+            const [levels, setLevels] = useState(() => generateLevels());
+            const [currentLevel, setCurrentLevel] = useState(1);
+            const [currentSentence, setCurrentSentence] = useState(0);
+            const [selectedWords, setSelectedWords] = useState({
+                subject: [],
+                predicate: [],
+                object: [],
+                complement: []
+            });
+            const [totalScore, setTotalScore] = useState(0);
+            const [levelScore, setLevelScore] = useState(0);
+            const [showResult, setShowResult] = useState(false);
+            const [currentMode, setCurrentMode] = useState('subject');
+            const [attempts, setAttempts] = useState(0);
+            const [showLevelSelect, setShowLevelSelect] = useState(true);
+
+            const currentLevelData = levels[currentLevel - 1];
+            const sentence = currentLevelData.sentences[currentSentence];
+
+            const modes = [
+                { key: 'subject', label: '主语', color: 'bg-red-200 text-red-800' },
+                { key: 'predicate', label: '谓语', color: 'bg-blue-200 text-blue-800' },
+                { key: 'object', label: '宾语', color: 'bg-green-200 text-green-800' },
+                { key: 'complement', label: '状语/补语', color: 'bg-yellow-200 text-yellow-800' }
+            ];
+
+            const handleWordClick = (wordIndex) => {
+                if (showResult) return;
+
+                setSelectedWords(prev => {
+                    const currentSelection = prev[currentMode];
+                    const newSelection = currentSelection.includes(wordIndex)
+                        ? currentSelection.filter(i => i !== wordIndex)
+                        : [...currentSelection, wordIndex];
+                    
+                    return {
+                        ...prev,
+                        [currentMode]: newSelection
+                    };
+                });
+            };
+
+            const checkAnswer = () => {
+                if (attempts >= 3) return;
+
+                const correct = sentence.correctStructure;
+                let correctCount = 0;
+                let totalCount = 0;
+
+                Object.keys(correct).forEach(key => {
+                    if (correct[key] && correct[key].length > 0) {
+                        totalCount++;
+                        const selectedSet = new Set(selectedWords[key]);
+                        const correctSet = new Set(correct[key]);
+                        
+                        if (selectedSet.size === correctSet.size && 
+                            [...selectedSet].every(x => correctSet.has(x))) {
+                            correctCount++;
+                        }
+                    }
+                });
+
+                const newAttempts = attempts + 1;
+                setAttempts(newAttempts);
+
+                if (correctCount === totalCount) {
+                    const bonus = Math.max(0, 4 - newAttempts);
+                    const points = 10 + bonus;
+                    setLevelScore(prev => prev + points);
+                    setTotalScore(prev => prev + points);
+                    setShowResult(true);
+                } else if (newAttempts >= 3) {
+                    setLevelScore(prev => Math.max(0, prev - 5));
+                    setTotalScore(prev => Math.max(0, prev - 5));
+                    setShowResult(true);
+                } else {
+                    setLevelScore(prev => Math.max(0, prev - 2));
+                    setTotalScore(prev => Math.max(0, prev - 2));
+                }
+            };
+
+            const nextSentence = () => {
+                if (currentSentence < 29) {
+                    setCurrentSentence(prev => prev + 1);
+                    resetSentence();
+                } else {
+                    completeLevel();
+                }
+            };
+
+            const completeLevel = () => {
+                const stars = levelScore >= 250 ? 3 : levelScore >= 180 ? 2 : levelScore >= 100 ? 1 : 0;
+                
+                setLevels(prev => prev.map((level, index) => {
+                    if (index === currentLevel - 1) {
+                        return { ...level, completed: true, stars: stars };
+                    }
+                    if (index === currentLevel && !level.unlocked) {
+                        return { ...level, unlocked: true };
+                    }
+                    return level;
+                }));
+
+                setShowLevelSelect(true);
+            };
+
+            const selectLevel = (level) => {
+                if (!levels[level - 1].unlocked) return;
+                
+                setCurrentLevel(level);
+                setCurrentSentence(0);
+                setLevelScore(0);
+                setShowLevelSelect(false);
+                resetSentence();
+            };
+
+            const resetSentence = () => {
+                setSelectedWords({
+                    subject: [],
+                    predicate: [],
+                    object: [],
+                    complement: []
+                });
+                setShowResult(false);
+                setAttempts(0);
+                setCurrentMode('subject');
+            };
+
+            const getWordClass = (wordIndex) => {
+                let classes = ['px-2 py-1 m-1 rounded cursor-pointer border-2 transition-all duration-200'];
+                
+                if (showResult) {
+                    classes.push('cursor-default');
+                    Object.keys(sentence.correctStructure).forEach(key => {
+                        if (sentence.correctStructure[key].includes(wordIndex)) {
+                            const mode = modes.find(m => m.key === key);
+                            if (mode) {
+                                classes.push(mode.color);
+                            }
+                        }
+                    });
+                } else {
+                    let isSelected = false;
+                    Object.keys(selectedWords).forEach(key => {
+                        if (selectedWords[key].includes(wordIndex)) {
+                            const mode = modes.find(m => m.key === key);
+                            if (mode) {
+                                classes.push(mode.color);
+                                isSelected = true;
+                            }
+                        }
+                    });
+                    
+                    if (!isSelected) {
+                        classes.push('bg-gray-100 hover:bg-gray-200 border-gray-300');
+                    }
+                }
+                
+                return classes.join(' ');
+            };
+
+            // 级别选择界面
+            if (showLevelSelect) {
+                return (
+                    <div className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+                        <div className="text-center mb-8">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-2">法律合同句子结构分析练习系统</h1>
+                            <p className="text-gray-600 mb-4">选择级别开始练习，完成当前级别解锁下一级别</p>
+                            <div className="text-xl text-blue-600">总得分: {totalScore}</div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                            {levels.map((level) => (
+                                <div
+                                    key={level.level}
+                                    onClick={() => selectLevel(level.level)}
+                                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                                        level.unlocked
+                                            ? level.completed
+                                                ? 'bg-green-100 border-green-300 hover:bg-green-200'
+                                                : 'bg-blue-100 border-blue-300 hover:bg-blue-200'
+                                            : 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                    }`}
+                                >
+                                    <div className="text-center">
+                                        <div className="font-bold text-lg">{level.level}</div>
+                                        <div className="text-xs text-gray-600 mb-2">{level.title}</div>
+                                        
+                                        {level.unlocked ? (
+                                            level.completed ? (
+                                                <div className="flex justify-center">
+                                                    {[...Array(3)].map((_, i) => (
+                                                        <Icon
+                                                            key={i}
+                                                            name="star"
+                                                            size={16}
+                                                            className={i < level.stars ? 'text-yellow-400' : 'text-gray-300'}
+                                                            fill={i < level.stars}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-blue-600 text-xs">可开始</div>
+                                            )
+                                        ) : (
+                                            <Icon name="lock" size={16} className="mx-auto text-gray-400" />
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <h3 className="font-medium text-yellow-800 mb-2">使用说明：</h3>
+                            <ul className="text-sm text-yellow-700 space-y-1">
+                                <li>• 每个级别包含30个句子练习</li>
+                                <li>• 选择句子成分类型，然后点击对应单词</li>
+                                <li>• 每题最多3次尝试机会</li>
+                                <li>• 完成当前级别可解锁下一级别</li>
+                                <li>• 根据得分获得1-3星评价</li>
+                            </ul>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 练习界面
+            return (
+                <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+                    {/* 头部信息 */}
+                    <div className="mb-6">
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <h1 className="text-2xl font-bold text-gray-800">
+                                    {currentLevelData.title} - {currentLevelData.description}
+                                </h1>
+                                <div className="text-sm text-gray-600 mt-1">
+                                    第 {currentSentence + 1} 题 / 共 30 题
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <div className="flex items-center gap-4 mb-2">
+                                    <div className="text-lg font-semibold">关卡得分: {levelScore}</div>
+                                    <div className="text-lg font-semibold text-blue-600">总得分: {totalScore}</div>
+                                </div>
+                                <button
+                                    onClick={() => setShowLevelSelect(true)}
+                                    className="text-sm text-blue-600 hover:text-blue-800 underline"
+                                >
+                                    选择关卡
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="text-sm text-gray-600 mb-4">
+                            剩余尝试次数: {3 - attempts} 次
+                            {attempts > 0 && (
+                                <span className="ml-4 text-orange-600">
+                                    (每次错误扣2分，最终错误扣5分)
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 进度条 */}
+                    <div className="mb-6">
+                        <div className="flex justify-between text-sm text-gray-600 mb-2">
+                            <span>关卡进度</span>
+                            <span>{Math.round(((currentSentence + 1) / 30) * 100)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${((currentSentence + 1) / 30) * 100}%` }}
+                            ></div>
+                        </div>
+                    </div>
+
+                    {/* 选择模式按钮 */}
+                    <div className="mb-6">
+                        <div className="text-sm font-medium text-gray-700 mb-2">当前选择模式:</div>
+                        <div className="flex flex-wrap gap-2">
+                            {modes.map(mode => (
+                                <button
+                                    key={mode.key}
+                                    onClick={() => setCurrentMode(mode.key)}
+                                    disabled={showResult}
+                                    className={`px-4 py-2 rounded-lg border-2 transition-all ${
+                                        currentMode === mode.key
+                                            ? `${mode.color} border-gray-400`
+                                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                                    } ${showResult ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+                                >
+                                    {mode.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 句子显示区域 */}
+                    <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                        <div className="text-lg font-medium text-gray-800 mb-4">
+                            请识别下列合同条款的句子结构：
+                        </div>
+                        <div className="flex flex-wrap items-center text-base leading-relaxed">
+                            {sentence.words.map((word, index) => (
+                                <span
+                                    key={index}
+                                    onClick={() => handleWordClick(index)}
+                                    className={getWordClass(index)}
+                                >
+                                    <span className="block text-center">{word}</span>
+                                    <span className="block text-xs text-center text-gray-500 mt-1">
+                                        {index + 1}
+                                    </span>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 控制按钮 */}
+                    <div className="flex justify-between items-center mb-6">
+                        <button
+                            onClick={resetSentence}
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                        >
+                            <Icon name="rotateCcw" size={16} />
+                            重置
+                        </button>
+                        
+                        <div className="flex gap-4">
+                            <button
+                                onClick={checkAnswer}
+                                disabled={showResult || attempts >= 3}
+                                className="flex items-center gap-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                            >
+                                <Icon name="check" size={16} />
+                                检查答案
+                            </button>
+                            
+                            {showResult && (
+                                <button
+                                    onClick={nextSentence}
+                                    className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                                >
+                                    {currentSentence < 29 ? '下一题' : '完成关卡'}
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 结果显示 */}
+                    {showResult && (
+                        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Icon 
+                                    name={attempts <= 1 ? "check" : "x"} 
+                                    size={20} 
+                                    className={attempts <= 1 ? "text-green-500" : "text-red-500"} 
+                                />
+                                <span className="font-medium">
+                                    {attempts <= 1 ? '回答正确！' : attempts < 3 ? '经过努力完成！' : '学习参考答案'}
+                                </span>
+                            </div>
+                            <div className="text-sm text-gray-700">
+                                <strong>句子结构解析：</strong>
+                                <br />
+                                {sentence.explanation}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // 渲染应用
+        ReactDOM.render(React.createElement(LegalSentenceAnalyzer), document.getElementById('root'));
+    </script>
+</body>
+</html>
